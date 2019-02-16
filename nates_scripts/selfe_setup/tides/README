@@ -1,0 +1,26 @@
+Generate tidal amplitudes and phases with a fort.14 like Adcirc.
+Run on ambcs01.
+
+To create tidal amplitudes and phases, you need fort.14
+(1) (on amb6400) Convert from ORSPCS-North NAD27 to WGS84 lat/lon:
+./spcs2ll -input fort.14 -output fort.14.ll -spcs2ll
+(./spcs2ll -input hgrid.ll -output hgrid.gr3 -ll2spcs converts in the opposite direction)
+(2) put the b.c. table of fort.14 to fort.14.ll (if necessary);
+(3) run ecp.f to get *.nos8;
+(4) make sure all nodes are inside edpac2xy.gr3; if not, move them inside.
+    Re-connect bc part of fort.14 to *.nos8;
+(5) run genbcs.f to get *.sta;
+(6) run intel_deg.f. (input: edpac2xy.gr3; *.sta; teanl.tct; ap.dat)
+
+Order of constituencies:
+
+Z0
+O1
+K1
+Q1
+P1
+K2
+N2
+M2
+S2
+

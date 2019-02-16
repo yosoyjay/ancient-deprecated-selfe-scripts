@@ -1,0 +1,35 @@
+%Independent script for movie form of habop.m output
+function []= habop_movie(filter)
+addpath('/usr/local/cmop/matlab/cmop/m-elio');
+gr.hgrid= gr_readHGrid('/home/users/flierm/2010/hgrid.gr3');
+directory= ('/home/users/flierm/2010');
+months= {'Jun/06-13-2010_14_days' 'Jun/06-13-2010_14_days_slr' 'Sep/09-12-2010_14_days' 'Sep/09-12-2010_14_days_slr'};
+startDate= {164 164 255 255};
+endDate= {177 177 268 268};
+dateStructure= struct ('filePath', months, 'startDate', startDate, 'endDate', endDate);
+files= {'elev.jpg' 'sal.jpg' 'temp.jpg' 'vel.jpg' 'cmb.jpg'};
+movienames= {'elev.avi' 'sal.avi' 'temp.avi' 'vel.avi' 'cmb.avi'};
+
+for allmonths= 1:4
+    for allfiles= 1:5
+		targetdirectory= sprintf('%s/%s/post/movies/%s', directory, months{allmonths}, filter);
+		outDIR= exist (targetdirectory);
+		if outDIR~= 7
+			mkdir(targetdirectory);
+		end   
+        movie_name= sprintf('%s/%s', targetdirectory, movienames{allfiles}); 
+        movie_obj= avifile(movie_name, 'fps', 3);  
+        for day= dateStructure(1,allmonths).startDate: dateStructure(1,allmonths).endDate        
+            %read files            
+            datafile= sprintf('%s/%s/post/daily_hab_opp/figures/%s/%i_%s', directory, months{allmonths}, filter, day, files{allfiles});          
+            %disp(datafile);
+            h= imread(datafile);
+            movie_obj= addframe(movie_obj, h);              
+			clf;
+        end    
+        movie_obj= close(movie_obj);   
+    end 
+end
+
+end
+

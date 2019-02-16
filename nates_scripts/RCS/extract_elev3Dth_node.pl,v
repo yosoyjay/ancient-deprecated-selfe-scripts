@@ -1,0 +1,104 @@
+head	1.1;
+access;
+symbols;
+locks; strict;
+comment	@# @;
+
+
+1.1
+date	2008.10.20.16.54.05;	author hyde;	state Exp;
+branches;
+next	;
+
+
+desc
+@@
+
+
+1.1
+log
+@Initial revision
+@
+text
+@#!/usr/bin/perl
+
+use strict;
+use CORIE;
+use POSIX qw(ceil floor);
+
+my $debug=0;
+
+if ($#ARGV!=5) {
+    print "$0 <run base> <year> <julian start day> <julian end day> <node number> <output file>\n";
+    exit 1;
+}
+
+my $home_dir = $ARGV[0]."/";
+my $year = $ARGV[1];
+my $sday = $ARGV[2];
+my $eday = $ARGV[3];
+my $node = $ARGV[4];
+my $outfile = $ARGV[5];
+
+my @@dirs;
+my ($i, $j);
+my $outstep = 900.0;
+
+for ($i=$sday; $i<=$eday; ++$i) {
+    $dirs[$#dirs+1]=sprintf("%d-%03d", $year, $i);
+    print "$dirs[$#dirs]\n";
+}
+
+my @@elev;
+
+open (OUT, ">$outfile") or die "could not open $outfile for writing\n";
+
+for ($i=0; $i<=$#dirs; ++$i) {
+    my $fname = "$home_dir$dirs[$i]/run/elev3D.th";
+    @@elev = extract_elev($fname);
+#    print "$#elev\n";
+    for ($j=0; $j<=$#elev; ++$j){
+#	print "elev: $elev[$j][0] mod: ".(ceil($elev[$j][0]) % $outstep)."\n";
+	#shouldn't have to do this ceil || floor nonsense, but apparently perl has 
+	# number representation issues...
+	if (ceil($elev[$j][0]) % $outstep == 0 || floor($elev[$j][0]) % $outstep == 0) {    
+	    print "\t$i, $j, $elev[$j][0]\n";
+	    print OUT "$elev[$j][0], $elev[$j][1]\n";
+	}
+    }
+}
+
+close(OUT);
+
+##############################################
+
+sub extract_elev() {
+    my $file = $_[0];
+
+    print "$file\n";
+    
+    open(INPUT, "$file") or die "could not open $file for reading\n";
+    my @@input = <INPUT>;
+    close(INPUT);
+    
+    my $ii;
+    my $curr=0;
+    my @@ret;
+
+    for ($ii=0; $ii<=$#input; ++$ii) {
+	if ($input[$ii]=~/^  (\d+)\.(\d+)E\+(\d+)$/ ) {
+	    my $tmep = 1;
+	    $ret[$curr][0] = ($1+scalar("0.$2"))*10**$3;
+	}
+	elsif ($input[$ii] =~ /\s+(\d+)\s+(\S+)/) {
+	    my ($t1, $t2) = ($1, $2);
+	    if ($t1 == $node) {
+		$ret[$curr][1] = $2;
+		++$curr;
+	    }
+	}
+    }
+
+    return @@ret;
+}
+@

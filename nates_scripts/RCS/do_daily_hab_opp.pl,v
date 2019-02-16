@@ -1,0 +1,60 @@
+head	1.1;
+access;
+symbols;
+locks; strict;
+comment	@# @;
+
+
+1.1
+date	2008.10.20.16.54.05;	author hyde;	state Exp;
+branches;
+next	;
+
+
+desc
+@@
+
+
+1.1
+log
+@Initial revision
+@
+text
+@#!/usr/bin/perl
+
+use strict;
+use CORIE;
+
+my $debug=0;
+
+if ($#ARGV!=5) {
+    print "$0 <script_dir> <target_dir> <regions file> <year> <julian start day> <julian end day>\n";
+    exit 0;
+}
+
+my @@command;
+my $source_dir = $ARGV[0];
+my $target_dir = $ARGV[1];
+my $region_file = $ARGV[2];
+my $year = $ARGV[3];
+my $sday = $ARGV[4];
+my $eday = $ARGV[5];
+
+# quick tasks to every directory.  Change tasks as needed
+
+my @@dirs;
+my @@input;
+
+my $i;
+my $j;
+my @@vars;
+for ($i=$sday; $i<=$eday; ++$i) {
+    $dirs[$#dirs+1]=sprintf("%d-%03d", $year, $i);
+    print "$dirs[$#dirs]\n";
+}
+
+for ($i=0; $i<=$#dirs; ++$i) {
+    runcommand("$source_dir/hab_opp","$target_dir/$dirs[$i]/run/ $target_dir/$dirs[$i]/process/ $region_file 1" , 0);
+}
+
+@

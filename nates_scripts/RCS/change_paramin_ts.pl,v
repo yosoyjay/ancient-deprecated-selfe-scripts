@@ -1,0 +1,89 @@
+head	1.1;
+access;
+symbols;
+locks; strict;
+comment	@# @;
+
+
+1.1
+date	2008.10.20.16.54.05;	author hyde;	state Exp;
+branches;
+next	;
+
+
+desc
+@@
+
+
+1.1
+log
+@Initial revision
+@
+text
+@#!/usr/bin/perl
+
+use strict;
+use CORIE;
+
+my $debug=0;
+
+if ($#ARGV!=5) {
+    print "$0 <in_dir> <out_dir> <year> <julian start day> <julian end day> <new_ts>\n";
+    exit 0;
+}
+
+my @@command;
+my $source_dir = $ARGV[0];
+my $target_dir = $ARGV[1];
+my $year = $ARGV[2];
+my $sday = $ARGV[3];
+my $eday = $ARGV[4];
+my $new_ts = $ARGV[5];
+my $version = $ARGV[6];
+my $out_line = $ARGV[7];
+
+#hard-code line numbers for ts and other changes
+my $dtl = 15; #13
+my $nwsl = 22; #
+my $outl = 621; 
+my $temp_line = "0 0 lq int_mom";
+my $temp_line_num = 651;
+
+
+my @@dirs;
+my @@input;
+
+my $i;
+my $j;
+my @@vars;
+for ($i=$sday; $i<=$eday; ++$i) {
+    $dirs[$#dirs+1]=sprintf("%d-%03d", $year, $i);
+    print "$dirs[$#dirs]\n";
+}
+
+for ($i=0; $i<=$#dirs; ++$i) {
+    open(INFILE, "$source_dir/$dirs[$i]/run/param.in") or die "could not open $source_dir/$dirs[$i]/run/param.in for reading\n";
+    @@input = <INFILE>;
+    close(INFILE);
+    open(OUTFILE, ">$target_dir/$dirs[$i]/run/param.in") or die "could not open $target_dir/$dirs[$i]/run/param.in for reading\n";
+    
+    for ($j=0; $j<=$#input; ++$j) {
+	if ($j==$dtl) {
+	    print OUTFILE "$new_ts   dt\n";
+	}
+	elsif ($j==$nwsl) {
+	    @@vars = split(/\s+/, $input[$j]);
+	    print OUTFILE "$vars[0] $new_ts    nws\n";
+	}
+	elsif ($j==$outl) {
+	    print OUTFILE (900/$new_ts)." ".(900/$new_ts*96)."\n";
+	}
+	elsif ($j==$temp_line_num) {
+	    print OUTFILE "$temp_line\n";
+	}
+	else {
+	    print OUTFILE $input[$j];
+	}	    
+    }
+}
+@

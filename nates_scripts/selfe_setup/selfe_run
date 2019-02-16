@@ -1,0 +1,5 @@
+#!/bin/bash
+#$ -cwd
+#$ -j y
+#$ -S /bin/bash
+/usr/mpi/gcc/openmpi-1.2.5/bin/mpirun --mca btl_tcp_if_include eth0 -np $NSLOTS ./pelfe

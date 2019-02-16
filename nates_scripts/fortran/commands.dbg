@@ -1,0 +1,72 @@
+/home/workspace/ccalmr46/hyde/selfe/grays/hindcast_13//2005-274
+/home/workspace/ccalmr46/hyde/selfe/grays/hindcast_13//2005-275
+/home/workspace/ccalmr46/hyde/selfe/grays/hindcast_13//2005-276
+2005-274 == 2005-40-16, 1
+rm /home/workspace/ccalmr46/hyde/selfe/grays/hindcast_13/bp///*.61
+rm /home/workspace/ccalmr46/hyde/selfe/grays/hindcast_13/bp///*.63
+rm /home/workspace/ccalmr46/hyde/selfe/grays/hindcast_13/bp///*.64
+ln -s /home/workspace/ccalmr/hindcasts/2005-40-16/run/1_elev.61 /home/workspace/ccalmr46/hyde/selfe/grays/hindcast_13/bp///1_elev.61
+ln -s /home/workspace/ccalmr/hindcasts/2005-40-16/run/1_salt.63 /home/workspace/ccalmr46/hyde/selfe/grays/hindcast_13/bp///1_salt.63
+ln -s /home/workspace/ccalmr/hindcasts/2005-40-16/run/1_temp.63 /home/workspace/ccalmr46/hyde/selfe/grays/hindcast_13/bp///1_temp.63
+ln -s /home/workspace/ccalmr/hindcasts/2005-40-16/run/1_hvel.64 /home/workspace/ccalmr46/hyde/selfe/grays/hindcast_13/bp///1_hvel.64
+/home/workspace/ccalmr46/hyde/selfe/grays/hindcast_13/bp///interpolate_variables_selfe4 
+cp fort.16 th.old
+/home/workspace/ccalmr46/hyde/selfe/grays/hindcast_13/bp///timeint_3Dth 
+cp th.new /home/workspace/ccalmr46/hyde/selfe/grays/hindcast_13//2005-274/run//elev3D.th
+/home/workspace/ccalmr46/hyde/selfe/grays/hindcast_13/bp///interpolate_variables_selfe4 
+cp fort.17 th.old
+/home/workspace/ccalmr46/hyde/selfe/grays/hindcast_13/bp///timeint_3Dth 
+cp th.new /home/workspace/ccalmr46/hyde/selfe/grays/hindcast_13//2005-274/run//temp3D.th
+cp fort.18 th.old
+/home/workspace/ccalmr46/hyde/selfe/grays/hindcast_13/bp///timeint_3Dth 
+cp th.new /home/workspace/ccalmr46/hyde/selfe/grays/hindcast_13//2005-274/run//salt3D.th
+/home/workspace/ccalmr46/hyde/selfe/grays/hindcast_13/bp///interpolate_variables_selfe4 
+cp fort.17 th.old
+/home/workspace/ccalmr46/hyde/selfe/grays/hindcast_13/bp///timeint_3Dth 
+cp th.new /home/workspace/ccalmr46/hyde/selfe/grays/hindcast_13//2005-274/run//uv3D.th
+2005-275 == 2005-40-16, 2
+rm /home/workspace/ccalmr46/hyde/selfe/grays/hindcast_13/bp///*.61
+rm /home/workspace/ccalmr46/hyde/selfe/grays/hindcast_13/bp///*.63
+rm /home/workspace/ccalmr46/hyde/selfe/grays/hindcast_13/bp///*.64
+ln -s /home/workspace/ccalmr/hindcasts/2005-40-16/run/2_elev.61 /home/workspace/ccalmr46/hyde/selfe/grays/hindcast_13/bp///2_elev.61
+ln -s /home/workspace/ccalmr/hindcasts/2005-40-16/run/2_salt.63 /home/workspace/ccalmr46/hyde/selfe/grays/hindcast_13/bp///2_salt.63
+ln -s /home/workspace/ccalmr/hindcasts/2005-40-16/run/2_temp.63 /home/workspace/ccalmr46/hyde/selfe/grays/hindcast_13/bp///2_temp.63
+ln -s /home/workspace/ccalmr/hindcasts/2005-40-16/run/2_hvel.64 /home/workspace/ccalmr46/hyde/selfe/grays/hindcast_13/bp///2_hvel.64
+/home/workspace/ccalmr46/hyde/selfe/grays/hindcast_13/bp///interpolate_variables_selfe4 
+cp fort.16 th.old
+/home/workspace/ccalmr46/hyde/selfe/grays/hindcast_13/bp///timeint_3Dth 
+cp th.new /home/workspace/ccalmr46/hyde/selfe/grays/hindcast_13//2005-275/run//elev3D.th
+/home/workspace/ccalmr46/hyde/selfe/grays/hindcast_13/bp///interpolate_variables_selfe4 
+cp fort.17 th.old
+/home/workspace/ccalmr46/hyde/selfe/grays/hindcast_13/bp///timeint_3Dth 
+cp th.new /home/workspace/ccalmr46/hyde/selfe/grays/hindcast_13//2005-275/run//temp3D.th
+cp fort.18 th.old
+/home/workspace/ccalmr46/hyde/selfe/grays/hindcast_13/bp///timeint_3Dth 
+cp th.new /home/workspace/ccalmr46/hyde/selfe/grays/hindcast_13//2005-275/run//salt3D.th
+/home/workspace/ccalmr46/hyde/selfe/grays/hindcast_13/bp///interpolate_variables_selfe4 
+cp fort.17 th.old
+/home/workspace/ccalmr46/hyde/selfe/grays/hindcast_13/bp///timeint_3Dth 
+cp th.new /home/workspace/ccalmr46/hyde/selfe/grays/hindcast_13//2005-275/run//uv3D.th
+2005-276 == 2005-40-16, 3
+rm /home/workspace/ccalmr46/hyde/selfe/grays/hindcast_13/bp///*.61
+rm /home/workspace/ccalmr46/hyde/selfe/grays/hindcast_13/bp///*.63
+rm /home/workspace/ccalmr46/hyde/selfe/grays/hindcast_13/bp///*.64
+ln -s /home/workspace/ccalmr/hindcasts/2005-40-16/run/3_elev.61 /home/workspace/ccalmr46/hyde/selfe/grays/hindcast_13/bp///3_elev.61
+ln -s /home/workspace/ccalmr/hindcasts/2005-40-16/run/3_salt.63 /home/workspace/ccalmr46/hyde/selfe/grays/hindcast_13/bp///3_salt.63
+ln -s /home/workspace/ccalmr/hindcasts/2005-40-16/run/3_temp.63 /home/workspace/ccalmr46/hyde/selfe/grays/hindcast_13/bp///3_temp.63
+ln -s /home/workspace/ccalmr/hindcasts/2005-40-16/run/3_hvel.64 /home/workspace/ccalmr46/hyde/selfe/grays/hindcast_13/bp///3_hvel.64
+/home/workspace/ccalmr46/hyde/selfe/grays/hindcast_13/bp///interpolate_variables_selfe4 
+cp fort.16 th.old
+/home/workspace/ccalmr46/hyde/selfe/grays/hindcast_13/bp///timeint_3Dth 
+cp th.new /home/workspace/ccalmr46/hyde/selfe/grays/hindcast_13//2005-276/run//elev3D.th
+/home/workspace/ccalmr46/hyde/selfe/grays/hindcast_13/bp///interpolate_variables_selfe4 
+cp fort.17 th.old
+/home/workspace/ccalmr46/hyde/selfe/grays/hindcast_13/bp///timeint_3Dth 
+cp th.new /home/workspace/ccalmr46/hyde/selfe/grays/hindcast_13//2005-276/run//temp3D.th
+cp fort.18 th.old
+/home/workspace/ccalmr46/hyde/selfe/grays/hindcast_13/bp///timeint_3Dth 
+cp th.new /home/workspace/ccalmr46/hyde/selfe/grays/hindcast_13//2005-276/run//salt3D.th
+/home/workspace/ccalmr46/hyde/selfe/grays/hindcast_13/bp///interpolate_variables_selfe4 
+cp fort.17 th.old
+/home/workspace/ccalmr46/hyde/selfe/grays/hindcast_13/bp///timeint_3Dth 
+cp th.new /home/workspace/ccalmr46/hyde/selfe/grays/hindcast_13//2005-276/run//uv3D.th

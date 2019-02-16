@@ -1,0 +1,98 @@
+head	1.1;
+access;
+symbols;
+locks; strict;
+comment	@# @;
+
+
+1.1
+date	2008.10.20.16.54.05;	author hyde;	state Exp;
+branches;
+next	;
+
+
+desc
+@@
+
+
+1.1
+log
+@Initial revision
+@
+text
+@#!/usr/bin/perl
+
+use strict;
+#use CORIE;
+use POSIX qw(ceil floor);
+
+my $debug=0;
+
+if ($#ARGV!=5) {
+    print "$0 <bounding model dir> <year> <start week> <start day> <end week> <end day>\n";
+    exit 1;
+}
+
+my @@command;
+my $source_dir = $ARGV[0];
+my $year = $ARGV[1];
+my $sweek = $ARGV[2];
+my $sday = $ARGV[3];
+my $eweek = $ARGV[4];
+my $eday = $ARGV[5];
+
+my @@dirs;
+my ($m1, $m2, $d1, $d2);
+
+#constants or inputs by another form...
+my $db = 14;  # -1 for forecast format
+
+my ($i, $j);
+
+my $target_day = 1;
+my $end_day = 7;
+my $start_day = 1;
+
+for ($i=$sweek; $i<=$eweek; ++$i) {
+    my $dir = sprintf("%d-%02d-%02d", $year, $i, $db);
+    
+    if ($i==$eweek) {
+	$end_day = $eday;
+    }
+    if ($i==$sweek) {
+	$start_day = $sday;
+    } else {
+	$start_day = 1;
+    }
+
+    for ($j=$sday; $j<=$eday; ++$j) {
+	runcommand("ln", "-s $source_dir$dir/run/$j"."_elev.61 $target_day"."_elev.61", $debug);
+	runcommand("ln", "-s $source_dir$dir/run/$j"."_hvel.64 $target_day"."_hvel.64", $debug);
+	runcommand("ln", "-s $source_dir$dir/run/$j"."_salt.63 $target_day"."_salt.63", $debug);
+	runcommand("ln", "-s $source_dir$dir/run/$j"."_temp.63 $target_day"."_temp.63", $debug);	    
+	runcommand("ln", "-s $source_dir$dir/run/$j"."_vert.63 $target_day"."_vert.63", $debug);	    
+	runcommand("ln", "-s $source_dir$dir/run/$j"."_wind.62 $target_day"."_wind.62", $debug);	    
+
+	$target_day = $target_day + 1;
+    }
+}
+
+sub runcommand {
+    my ( $e, $a, $debug ) = @@_;
+
+    if ($debug) { # in case $debug is undef
+    } else {
+       $debug = 0;
+    }
+
+    # invoke the real system call here
+    my $err = 0;
+    if ($debug) {
+        print "$e $a\n";
+    } else {
+        $err = system("$e $a");
+    }
+
+    return $err;
+}
+@

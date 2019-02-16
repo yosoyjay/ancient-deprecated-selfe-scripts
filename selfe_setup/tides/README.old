@@ -1,0 +1,27 @@
+Generate tidal amplitudes and phases with a fort.14 like Adcirc.
+Run on ambcs01.
+
+To create tidal amplitudes and phases, you need fort.14
+(1) get the x,y,depth part of fort.14 (hgrid.gr3) only (No space allowed at the
+    beginning of each line! with %s/^ *//g); keep the rest as table;
+(2) run spcs.pl (ambcs01) to get fort.14.ll (lat-long)
+    (input: fort.14; fort.14.ll; 2; 1; 8; 1; 3601; wo; 2);
+(3) put the first 2 lines & table of fort.14 to fort.14.ll (or hgrid.ll; as grid format);
+(4) run ecp.f to get *.nos8;
+(5) make sure all nodes are inside edpac2xy.gr3; if not, move them inside.
+    Re-connect bc part of fort.14 to *.nos8;
+(6) run genbcs.f to get *.sta;
+(7) run intel_deg.f. (input: edpac2xy.gr3; *.sta; teanl.tct; ap.dat)
+
+Order of constituencies:
+
+Z0
+O1
+K1
+Q1
+P1
+K2
+N2
+M2
+S2
+

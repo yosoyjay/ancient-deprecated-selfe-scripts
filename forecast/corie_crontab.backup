@@ -1,0 +1,68 @@
+SHELL=/bin/bash
+SGE_CELL=default
+SGE_ARCH=lx26-amd64
+SGE_EXECD_PORT=537
+SGE_QMASTER_PORT=536
+SGE_ROOT=/opt/gridengine
+
+LD_LIBRARY_PATH=/opt/gridengine/lib/lx26-amd64:/opt/intel/mkl/10.0.1.014/lib/em64t:/opt/gridengine/lib/lx26-amd64:/opt/intel/itac/7.1/itac/slib_impi3:/opt/intel/fce/10.1.015/lib:/opt/intel/cce/10.1.015/lib:/opt/gridengine/lib/lx26-amd64:/usr/local/pgsql/lib:/usr/local/lib:
+JBOSS_CLASSPATH=/opt/gridengine/lib/drmaa.jar
+CPATH=/opt/intel/mkl/10.0.1.014/include
+NLSPATH=/opt/intel/fce/10.1.015/lib/locale/en_US:/opt/intel/cce/10.1.015/lib/locale/en_US
+PATH=/opt/gridengine/bin/lx26-amd64:/opt/gridengine/bin/lx26-amd64:/usr/java/jdk1.5.0_10/bin:/opt/intel/itac/7.1/bin:/opt/intel/fce/10.1.015/bin:/opt/intel/idbe/10.1.015/bin:/opt/intel/cce/10.1.015/bin:.:/home/users/corie/bin:/home/corie/bin:/usr/local/bin:/usr/local/pgsql/bin:/bin:/usr/bin:/sbin:/usr/sbin:/usr/X11R6/bin:/usr/local/ace/bin:/opt/gridengine/bin/lx26-amd64:/usr/kerberos/bin:/usr/java/latest/bin:/usr/local/bin:/bin:/usr/bin:/opt/ganglia/bin:/opt/ganglia/sbin:/opt/openmpi/bin/:/opt/rocks/bin:/opt/rocks/sbin:/opt/sun-ct/bin:/opt/eclipse:/opt/ganglia/bin:/opt/ganglia/sbin:/opt/maven/bin:/opt/openmpi/bin/:/opt/rocks/bin:/opt/rocks/sbin:/home/corie/bin
+DYLD_LIBRARY_PATH=/opt/intel/fce/10.1.015/lib:/opt/intel/cce/10.1.015/lib
+CLASSPATH=/opt/intel/itac/7.1/itac/lib_impi3
+
+#* * * * * env > /tmp/crontabenv.log
+
+# Forecast product generation for all but estuary products - this is to be replaced
+PRODDIR=/home/corie/svn/modeling/matlab/forecast_products/all/
+0 1 * * * $PRODDIR/genprods.sh > $PRODDIR/genprods.sh.out < /dev/null 2>&1
+# New product generation - right now just the estuary products Fri Jul 15 12:46:08 PDT 2011
+#30 6 * * * /home/corie/forecasts/products/genestuary.sh > /home/corie/forecasts/products/genestuary.sh.out < /dev/null 2>&1
+0 6 * * * /home/corie/forecasts/products/runall.pl -f f22 < /dev/null > /home/corie/forecasts/products/runall.pl.f22.out 2>&1
+30 5 * * * /home/corie/forecasts/products/runlamprey.pl -f f22 < /dev/null > /home/corie/forecasts/products/runlamprey.pl.f22.out 2>&1
+0 7 * * * /home/corie/forecasts/products/runall.pl -f f26 < /dev/null > /home/corie/forecasts/products/runall.pl.f26.out 2>&1
+
+########## f22 ####################
+F22DIR=/home/corie/forecasts/f22
+10 0 * * * $F22DIR/bin/simlink.pl $F22DIR/ > $F22DIR/log/simlink.pl.out 2>&1
+35 8 * * * $F22DIR/bin/place_sflux_files.csh > $F22DIR/tomorrow/log/place_sflux_files.csh.out 2>&1
+30 11 * * * $F22DIR/bin/prep_f22.pl $F22DIR 90 > $F22DIR/tomorrow/log/prep_f22.pl.out 2>&1
+0 12 * * * $F22DIR/bin/runf22.pl > $F22DIR/tomorrow/log/runf22.pl.out 2>&1
+#30 * * * * /usr/bin/rsync -av --exclude outputs --rsh=ssh $F22DIR ambfs18.stccmop.org:/disk/ambfs18/1/ccalmr47/forecasts </dev/null >/tmp/update-f22.log 2>&1
+# run for 7 more days in special f22ext directory
+30 18 * * * ${F22DIR}ext/bin/prepf22ext.sh > ${F22DIR}ext/bin/prepf22ext.sh.out < /dev/null 2>&1
+#7 18 * * * /home/corie/svn/modeling/nws/genswandata-f22.sh > /home/corie/svn/modeling/nws/genswandata-f22.sh.log < /dev/null 2>&1
+########## f26 ####################
+F26DIR=/home/corie/forecasts/f26
+10 0 * * * $F26DIR/bin/simlink.pl $F26DIR/ > $F26DIR/log/simlink.pl.out 2>&1
+35 8 * * * $F26DIR/bin/place_sflux_files.csh > $F26DIR/tomorrow/log/place_sflux_files.csh.out 2>&1
+15 10 * * * $F26DIR/bin/prep_f26.pl $F26DIR 150 > $F26DIR/tomorrow/log/prep_f26.pl.out 2>&1
+30 10 * * * $F26DIR/bin/runf26.pl > $F26DIR/tomorrow/log/runf26.pl.out < /dev/null 2>&1
+########## f26 ####################
+########## f2d ####################
+# This forecasts provides forcings for other forecasts at beaver army. Set up local directory
+F2DDIR=/home/corie/forecasts/f2d
+10 0 * * * $F2DDIR/bin/simlink.pl $F2DDIR > $F2DDIR/log/simlink.pl.out 2>&1
+5 9 * * * $F2DDIR/bin/prep2d.pl $F2DDIR 90 8 > $F2DDIR/tomorrow/log/prep2d.pl.out 2>&1
+########## f2d ####################
+#### update forecast data on file server ####
+#0 * * * * /home/corie/forecasts/bin/updatedev.sh < /dev/null > /home/corie/forecasts/log/updatedev.sh.log 2>&1
+15 * * * * /home/corie/forecasts/bin/updateforecasts.sh < /dev/null > /home/corie/forecasts/log/updateforecasts.sh.log 2>&1
+### extract f22 forecast data for NOAA-NWS
+#30 22 * * * /home/corie/svn/modeling/nws/genswandata-f22.sh > /home/corie/svn/modeling/nws/genswandata-f22.sh.log < /dev/null 2>&1
+### extract f22 forecast data for  CG SAR application
+#0 6 * * * /home/corie/svn/modeling/cg/getcoastguard.pl > /home/corie/svn/modeling/cg/getcoastguard.pl.log < /dev/null 2>&1
+### run oil spill code ###
+15 8 * * * /home/corie/forecasts/spill/runspill.sh > /home/corie/forecasts/spill/runspill.sh.out < /dev/null 2>&1
+
+########## gulf ####################
+GULFDIR=/home/corie/forecasts/gulf
+10 0 * * * $GULFDIR/bin/simlink.pl $GULFDIR/ > $GULFDIR/log/simlink.pl.out < /dev/null 2>&1
+35 8 * * * $GULFDIR/bin/place_sflux_files.csh > $GULFDIR/tomorrow/log/place_sflux_files.csh.out < /dev/null 2>&1
+30 9 * * * $GULFDIR/bin/prep_gulf.pl $GULFDIR 90 > $GULFDIR/tomorrow/log/prep_gulf.pl.out < /dev/null 2>&1
+20 14 * * * $GULFDIR/bin/rungulf.pl > $GULFDIR/tomorrow/log/rungulf.pl.out < /dev/null 2>&1
+#10 8 * * * /bin/nice $GULFDIR/products/spill/runspill.sh > $GULFDIR/today/log/runspill.sh.out < /dev/null 2>&1
+###10 9 * * * $GULFDIR/products/rungulf.sh > $GULFDIR/today/log/rungulf.sh.out < /dev/null 2>&1
+########## gulf ####################

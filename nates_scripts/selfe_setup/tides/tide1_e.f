@@ -1,0 +1,721 @@
+	program tide1
+c	this is special version of the analysis program that will
+c	calculate the astronomical arguments  V,u,f for all constituents
+c	at specified time t0
+c	The new calendar that can handle dates outside the 20th
+c	century is included
+c
+c	Some of the documentation may not be relevant to this program.
+c	It was taken from the tidal heights analysis program.
+c
+c	The astronomical arguments V,u,f can be used to reconstruct
+c	or analyse a tidal record whose form is assumed to be the linear
+c	summation of constituents, each having the form
+c
+c                f(t0)*A*cos(V(t0)+omega*(t-t0)+u(t0)-g)
+c
+c	where  A,omega, and g are the constituent amplitude, frequency
+c	and phase lag
+c
+      character*5 KONTAB,KBLANK,KSTN,NA,IREF,KON,KONIN,DDUM,KO,KMPR
+      character*5 NKON,NNKON,NKMPR
+      character*1 icn
+      DIMENSION NA(4),LSTRP(10)
+      DIMENSION KONTAB(500),KON(500),C(500),S(500),FREQ(500),KMPR(500)
+     1,SIG(500),ERC(500),ERS(500),NKON(15),A(500),EPS(500),XP(18000)
+      COMMON Z(18000),IHH1,IDD1,IMM1,IYY1,IHHL,IDDL,IMML,IYYL,KH1
+      dimension AA(500),GD(500),KO(500)
+      DATA KBLANK/'     '/
+      DEGREE(CYC)=(CYC-IFIX(CYC)-SIGN(.5,CYC)+.5)*360.
+c	open(unit=4,file='tide2.dat',status='old',form='formatted')
+c	open(unit=8,file='tide3.dat',status='old',form='formatted')
+C
+C***********************************************************************
+C
+C     THIS VERSION OF THE FLEXIBLE ANALYSIS PROGRAM HAS BEEN
+C     MODIFIED TO HANDLE DATA RECORDS WITH GAPS. THE LOW PASS FILTERING
+C     HAS BEEN REMOVED. SUBROUTINE INPUT IS USED TO READ IN THE DATA
+C     SUBROUTINES UCON AND SCFIT2 FROM THE TIDAL STREAMS PROGRAM
+C     WRITTEN BY J. TAYLOR WERE ADAPTED FOR USE BY THIS PROGRAM.
+C
+C                                           J. MINAKER  DEC. 1973.
+C*********************************************************************
+C*
+C*    THE PRESENT PROGRAM VERSION WAS REVISED IN JULY 1976 BY
+C*    M FOREMAN. SEE THE USER MANUAL FOR DETAILS.
+C*
+C***********************************************************************
+C*  FILE REFERENCE NUMBERS OF DEVICES REQUIRED BY THIS PROGRAM
+C*      KR  - INPUT FILE  - CONTAINS THE TIDAL CONSTITUENT INFORMATION.
+C*      MTD - INPUT FILE  - GIVES TIDAL STATION AND ANALYSIS TYPE
+C*                          DETAILS ALONG WITH THE HOURLY HEIGHTS.
+C*      LP  - OUTPUT FILE - LINE PRINTER.
+C*      KP  - OUTPUT FILE - CONTAINS THE ANALYSIS RESULTS, IF SO
+C*                          REQUESTED.
+C*      7   - OUTPUT FILE - CONTAINS RESULTS FOR ALPHATEXT OR
+C*                          FLEXOWRITER, IF SO REQUESTED.
+C*      9   - OUTPUT FILE - TEMPORARY DISC FILE FOR STORING PRELIMINARY
+C*                          OUTPUT AND TERMINATING THE PROGRAM.
+C*      KPR - OUTPUT FILE - IF SO REQUESTED, CONTAINS HOURLY SYNTHESIZED
+C*                          VALUES BASED ON ANALYSIS RESULTS.
+C*  PRESENTLY KR,MTD,LP,KP, AND KPR ARE ASSIGNED THE RESPECTIVE  NUMBERS
+C*  8,4,6,2, AND 10.  SEE THE MANUAL, OR COMMENT STATEMENTS WITHIN
+C*  WITHIN THIS PROGRAM FOR FURTHER DETAILS ON THEIR USE.
+C*
+C***********************************************************************
+C*  IF THE SAMPLING INTERVAL OF THE ORIGINAL DATA IS OTHER THAN
+C*  ONE HOUR, THEN THE RECORD SHOULD BE FILTERED AND DECIMATED TO HOURLY
+C*  INTERVALS, PRIOR TO SUBMISSION TO THIS PROGRAM. G GODIN SUGGESTS THE
+C*  SEQUENCE OF MOVING AVERAGE FILTERS A12*A12*A13 FOR 5 MINUTE DATA,
+C*  AND A6*A6*A7 FOR 10 MINUTE DATA.
+C*
+C***********************************************************************
+C*  ARRAY DEFINITIONS AND DIMENSION GUIDELINES.
+C*
+C*  MTOT           IS THE NUMBER OF CONSTITUENTS INCLUDED IN THE DATA
+C*                 FILE. AT PRESENT THIS IS 146.
+C*  M              IS THE NUMBER OF CONSTITUENTS INCLUDED IN THE
+C*                 ANALYSIS. AT PRESENT IT WILL HAVE A MAXIMUM OF 69 +
+C                  THE NUMBER OF SHALLOW WATER CONSTITUENTS SPECIALLY
+C*                 DESIGNATED FOR INCLUSION (NOT IN THE STANDARD 69
+C*                 CONSTITUENT PACKAGE) IN THE ANALYSIS.
+C*  KONTAB(I)      IS THE ARRAY CONTAINING ALL THE CONSTITUENT NAMES AS
+C*                 THEY ARE READ IN FROM THE DATA FILE. IT SHOULD HAVE
+C*                 THE MINIMUM DIMENSION MTOT.
+C*  KON(I)         IS THE ARRAY CONTAINING THE NAMES OF ALL THE
+C*                 CONSTITUENTS THAT ARE TO BE INCLUDED IN THE LEAST
+C*                 SQUARES ANALYSIS TO THE TIDAL RECORD. THEY ARE CHOSEN
+C*                 FROM THE KONTAB LIST VIA THE RAYLEIGH CRITERION. THE
+C*                 ARRAY SHOULD HAVE DIMENSION AT LEAST M.
+C*  FREQ(I)        IS THE ARRAY OF FREQUENCIES (CYCLES/ HR.) CORRESPOND-
+C*                 ING TO THE CONSTITUENTS CONTAINED IN KONTAB. IT
+C*                 SHOULD HAVE DIMENSION AT LEAST MTOT.
+C*  KMPR(I)        IS THE ARRAY OF CONSTITUENTS TO WHICH THOSE IN KONTAB
+C*                 SHOULD BE COMPARED UNDER THE RAYLEIGH CRITERION. IT
+C*                 SHOULD HAVE DIMENSION AT LEAST MTOT.
+C*  NKON(I)        IS THE ARRAY CONTAINING THE NAMES OF ALL ADDITIONAL
+C*                 CONSTITUENTS, ALONG WITH THE STANDARD 69, TO BE
+C*                 CONSIDERED FOR INCLUSION IN THE ANALYSIS.
+C*  C(I) & S(I)    ARE THE ARRAYS CONTAINING THE COS AND SIN COEFFICIENTS
+C*                 OF THE I-TH CONSTITUENT AS FOUND VIA THE LEAST
+C*                 SQUARES ANALYSIS. THEIR MINIMUM DIMENSION SHOULD BE
+C*                 M.
+C*  SIG(I)         IS THE ARRAY OF FREQUENCIES CORRESPONDING TO THE
+C*                 CONSTITUENTS CONTAINED IN KON. IT SHOULD HAVE MINIMUM
+C*                 DIMENSION M.
+C*  ERC(I) & ERS(I) ARE THE ARRAYS CONTAINING ESTIMATES OF THE ERRORS
+C*                 (STANDARD DEVIATIONS) FOR THE VALUES CONTAINED IN THE
+C*                 ARRAYS C(I) & S(I) RESPECTIVELY. THEIR MINIMUM
+C*                 DIMENSION SHOULD BE M.
+C*  Z(I)           IS THE ARRAY CONTAINING ALL THE HOURLY HEIGHTS OF THE
+C*                 DATA RECORD. IT HAS BEEN GIVEN THE DIMENSION SIZE OF
+C*                 9000 WHICH IS SUFFICIENT FOR RECORDS OF LENGTH UP TO
+C*                 ONE YEAR.
+C*  XP(I)          IS THE ARRAY CONTAINING THE SYNTHESIZED HOURLY
+C*                 HEIGHTS BASED ON THE ANALYSIS RESULTS.  PREDICTIONS
+C*                 ARE SPECIFIED FOR THE ANALYSIS PERIOD, INCLUDING
+C*                 THOSE INTERVALS WHERE THERE WERE GAPS IN THE ORIGINAL
+C*                 RECORD.  AS WITH Z, THIS ARRAY HAS BEEN GIVEN THE
+C*                 DIMENSION SIZE OF 9000.
+C*  AS(I,J)        IS THE TWO DIMENSIONAL ARRAY CONTAINING THE UPPER
+C*                 TRIANGLE AND DIAGONAL OF THE  ARRAY
+C*                 RESULTING FROM THE LEAST SQUARES FIT OF CONSTITUENT
+C*                 AMPLITUDE AND PHASE TO THE HOURLY RECORD. IT SHOULD
+C*                 HAVE A MINIMUM DIMENSION OF 2*M-1 BY 2*M-1.
+C*  A(I) & EPS(I)  ARE THE ARRAYS CONTAINING THE AMPLITUDE AND PHASE FOR
+C*                 CONSTITUENT KON(I) AS FOUND VIA THE LEAST SQUARES
+C*                 ANALYSIS. THEY SHOULD HAVE A MINIMUM DIMENSION OF
+C*                 M.
+C*  KO(I)          IS THE ARRAY CONTAINING THE NAMES OF ALL THE CONSTI-
+C*                 TUENTS IN KON AND INFERRED FROM THOSE IN KON. ITS
+C*                 MINIMUM DIMENSION SHOULD BE M.
+C*  AA(I) & GD(I)  ARE THE ARRAYS CONTAINING THE AMPLITUDE AND PHASE FOR
+C*                 CONSTITUENT KO(I) AFTER CORRECTIONS FOR NODAL MODULA-
+C*                 TION, ASTRONOMICAL ARGUMENT AND INFERRED CONSTITUENT.
+C*                 THEIR MINIMUM DIMENSION SHOULD BE M.
+C***********************************************************************
+C
+C
+C JOB INITIALIZATION
+C
+      KR=8
+      KP=2
+      LP=6
+      MTD=4
+      KPR=10
+      RAY=1.0
+C***********************************************************************
+C* CONSTITUENTS, FREQUENCIES, & RAYLEIGH COMPARISON PAIRS ARE READ ON
+C* DEVICE KR.
+C
+      DO 1020 K=1,1000
+      READ(KR,1010) KONTAB(K),FREQ(K),KMPR(K)
+ 1010 FORMAT(4X,A5,3X,F13.10,4X,A5)
+      IF(KONTAB(K).eq.KBLANK) goto 1040
+1020  CONTINUE
+1040  MTOT=K-1
+C
+C***********************************************************************
+C* ASTRONOMICAL ARGUMENTS, SATELLITES TO THE MAIN CONSTITUENTS, AND
+C* SHALLOW WATER CONSTITUENTS ARE READ ON DEVICE KR.
+C
+      CALL OPNVUF (IDUM,DDUM,DUM,DUM,DUM)
+C
+C***********************************************************************
+C*  CASE INITIALIZATION
+C*
+C*  READ ON DEVICE MTD THE FOLLOWING INFORMATION ON THE PERIOD OF THE
+C*  DESIRED ANALYSIS : INDY,IHH1,IDD1,IMM1,IYY1,icc1,IHHL,IDDL,IMML,IYYL
+c*                     iccl     
+C*  IN THE FORMAT (I1,1X,10I2)
+C*     INDY   = 8 INDICATES AN ANALYSIS IS DESIRED FOR THE UPCOMING
+C*                 PERIOD.
+C*              0 INDICATES NO FURTHER ANALYSES ARE DESIRED.
+C*     IHH1,IDD1,IMM1,IYY1 = HOUR, DAY, MONTH, & YEAR OF THE BEGINNING
+C*                           OF THE ANALYSIS.
+C*     IHHL,IDDL,IMML,IYYL = HOUR, DAY, MONTH, & YEAR OF THE END OF THE
+C*                           ANALYSIS PERIOD.
+C*
+C
+c      READ(5,1060) INDY,IHH1,IDD1,IMM1,IYY1,icc1,IHHL,IDDL,IMML,IYYL,iccl
+      READ(5,1060) INDY,IHH1,IDD1,IMM1,IYY1,icc1
+	if(icc1.eq.0) icc1=19
+	if(iccl.eq.0) iccl=19
+1060  FORMAT(I1,1X,10I2)
+1050  READ(5,1111)INDIC,KSTN,(NA(J),J=1,4),ITZONE,LAD,LAM,LOD,LOM,IREF
+1111  FORMAT(I1,4X,A5,3A6,A4,A3,I3,I2,I3,I2,5X,A5)
+C
+C***********************************************************************
+C*  UNLESS SPECIFIED OTHERWISE, A STATION LATITUDE OF 50 DEGREES IS
+C*  ASSUMED FOR THE PURPOSE OF CALCULATING SATELLITE TO MAIN
+C*  CONSTITUENT AMPLITUDE RATIOS.
+C
+      XLAT=LAD+ISIGN(LAM,LAD)/60.
+      IF(ABS(XLAT).LT.5.) XLAT=SIGN(5.,XLAT)
+      IF(IDD1)1080,1070,1080
+1070  STOP
+C
+1080  CALL gDAY(IDD1,IMM1,IYY1,icc1,KD)
+C
+C***********************************************************************
+C*  HERE V (= ASTRONOMICAL PHASE ARGUMENT), U & F (NODAL MODULATION
+C*  PHASE AND AMPLITUDE CORRECTIONS) ARE CALCULATED FOR ALL MTOT
+C*  CONSTITUENTS.
+C
+	kh=24*kd+ihh1
+      CALL SETVUF(Kh,DDUM,DUM,DUM,XLAT)
+      STOP
+      END
+      SUBROUTINE VUF (KH,KONX,VUX,FX,XLAT)
+C
+C***********************************************************************
+C*  THIS SUBROUTINE CALCULATES V (ASTRONOMICAL PHASE ARGUMENT), U AND F
+C*  (NODAL MODULATION PHASE AND AMPLITUDE CORRECTIONS) FOR ALL CONSTITU-
+C*  ENTS.
+c*
+C*	This October 1992 version also recalculates the constituent
+c	frequencies for the middle of the analysis period
+C
+      character*5 KON,KBLANK,KONCO,KONX,kontab
+	real*8 d1,h,pp,s,p,enp,dh,dpp,ds,dp,dnp,hh,tau,dtau
+      DIMENSION KON(500),VU(500),F(500),NJ(500),II(50),JJ(50),KK(50),
+     1 LL(50),MM(50),NN(50),SEMI(50),kontab(500),freq(500)
+      DIMENSION EE(205),LDEL(205),MDEL(205),NDEL(205),IR(205),PH(205)
+      DIMENSION KONCO(320),COEF(320),indx(500)
+      	common /const/kontab,freq,mtot
+	DATA KBLANK/'     '/
+C
+C***********************************************************************
+C*  THE DIMENSION OF KON, VU, F, AND NJ SHOULD BE AT LEAST EQUAL TO THE
+C*  TOTAL NUMBER OF POSSIBLE CONSTITUENTS (PRESENTLY 146), THE DIMENSION
+C*  OF II, JJ, KK, LL, MM, NN AND SEMI SHOULD BE AT LEAST EQUAL TO THE
+C*  NUMBER OF MAIN CONSTITUENTS (PRESENTLY 45), THE DIMENSION OF EE,
+C*  LDEL, MDEL, NDEL, IR, AND PH SHOULD BE AT LEAST EQUAL TO THE TOTAL
+C*  NUMBER OF SATELLITES TO ALL THE MAIN CONSTITUENTS PLUS THE NUMBER
+C*  OF CONSTITUENTS WITH NO SATELLITES (PRESENTLY 162+8),
+C*  AND THE DIMENSION OF KONCO, AND COEFF SHOULD BE AT LEAST EQUAL TO
+C*  THE SUM FOR ALL SHALLOW WATER CONSTITUENTS OF THE NUMBER OF MAIN
+C*  CONSTITUENTS FROM WHICH EACH IS DERIVED (PRESENTLY 251).
+C***********************************************************************
+C* GIVEN CONSTITUENT KONX , THE NODAL CORRECTIONS V+U AND F ARE RETURNED
+C
+      DO 20 K=1,NTOTAL
+      IF(KON(K).eq.KONX) go to 40
+20    CONTINUE
+      WRITE(LP,30)KONX
+   30 FORMAT(' VUF STOP.',A5)
+      STOP
+40    VUX=VU(K)
+      FX=F(K)
+      RETURN
+C
+C***********************************************************************
+C*  THE ASTRONOMICAL ARGUMENTS AND THEIR RATES OF CHANGE,
+C*  S0,H0,P0,ENP0,PP0,DS,DH,DP,DNP,DPP,  ARE READ FROM TWO RECORDS IN
+C*  THE FORMAT(5F13.10):
+C*     S0  = MEAN LONGITUDE OF THE MOON (CYCLES) AT 000 ET 1/1/1976.
+C*     H0  = MEAN LONGITUDE OF THE SUN.
+C*     P0  = MEAN LONGITUDE OF THE LUNAR PERIGEE.
+C*     ENP0= NEGATIVE OF THE MEAN LONGITUDE OF THE ASCENDING NODE.
+C*     PP0 = MEAN LONGITUDE OF THE SOLAR PERIGEE (PERIHELION).
+C*     DS,DH,DP,DNP,DPP ARE THEIR RESPECTIVE RATES OF CHANGE OVER A 365
+C*     DAY PERIOD AS OF 000 ET 1/1/1976.
+C
+      ENTRY OPNVUF(KH,KONX,VUX,FX,XLAT)
+      KR=8
+      LP=6
+      PI=3.1415926536
+      TWOPI=2.*PI
+c	These values are no longer used though they are still
+c	read in. More accurate polynomial approximations are 
+c	now employed.
+      READ(KR,50)S0,H0,P0,ENP0,PP0,DS,DH,DP,DNP,DPP
+ 50   FORMAT(5F13.10)
+C
+C***********************************************************************
+C*  HERE THE MAIN CONSTITUENTS AND THEIR DOODSON NUMBERS ARE READ IN
+C*  FORMAT (6X,A5,1X,6I3,F5.2,I4). THE VALUES ARE RESPECTIVELY
+C*     KON    = CONSTITUENT NAME
+C*  II,JJ,KK,LL,MM,NN = THE SIX DOODSON NUMBERS
+C*     SEMI   = PHASE CORRECTION
+C*     NJ     = THE NUMBER OF SATELLITES FOR THIS CONSTITUENT.
+C*  THE END OF ALL MAIN CONSTITUENTS IS DENOTED BY A BLANK CARD.
+C
+      JBASE=0
+      DO 90 K=1,1000
+      READ(KR,60)KON(K),II(K),JJ(K),KK(K),LL(K),MM(K),NN(K),SEMI(K),
+     2 NJ(K)
+   60 FORMAT(6X,A5,1X,6I3,F5.2,I4)
+      IF(KON(K).eq.KBLANK) go to 100
+70    J1=JBASE+1
+      IF(NJ(K).GE.1) GO TO 75
+      NJ(K)=1
+      JL=J1
+      PH(J1)=0.
+      EE(J1)=0.
+      LDEL(J1)=0
+      MDEL(J1)=0
+      NDEL(J1)=0
+      IR(J1)=0
+      GO TO 90
+   75 JL=JBASE+NJ(K)
+C
+C***********************************************************************
+C*  IF NJ>0, INFORMATION ON THE SATELLITE CONSTITUENTS IS READ , THREE
+C*  SATELLITES PER CARD, IN THE FORMAT (11X,3(3I3,F4.2,F7.4,1X,I1,1X)).
+C*  FOR EACH SATELLITE THE VALUES READ ARE
+C*     LDEL,MDEL,NDEL = THE CHANGES IN THE LAST THREE DOODSON NUMBERS
+C*                      FROM THOSE OF THE MAIN CONSTITUENT.
+C*     PH     = THE PHASE CORRECTION
+C*     EE     = THE AMPLITUDE RATIO OF THE SATELLITE TIDAL POTENTIAL TO
+C*              THAT OF THE MAIN CONSTITUENT.
+C*     IR     = 1 IF THE AMPLITUDE RATIO HAS TO BE MULTIPLIED BY THE
+C*                LATITUDE CORRECTION FACTOR FOR DIURNAL CONSTITUENTS
+C*              2 IF THE AMPLITUDE RATIO HAS TO BE MULTIPLIED BY THE
+C*                LATITUDE CORRECTION FACTOR FOR SEMI-DIURNAL CONSTI-
+C*                TUENTS.
+C*              OTHERWISE IF NO CORRECTION IS REQUIRED TO THE AMPLITUDE
+C*                RATIO.
+C
+      READ(KR,80)(LDEL(J),MDEL(J),NDEL(J),PH(J),EE(J),IR(J),J=J1,JL)
+   80 FORMAT((11X,3(3I3,F4.2,F7.4,1X,I1,1X)))
+90    JBASE=JL
+100   NTIDAL=K-1
+C
+C***********************************************************************
+C*  THE SHALLOW WATER CONSTITUENTS AND THE MAIN CONSTITUENTS FROM WHICH
+C*  THEY ARE DERIVED ARE READ IN HERE WITH THE FORMAT
+C*  (6X,A5,I1,2X,4(F5.2,A5,5X)). THE VALUES ARE RESPECTIVELY
+C*     KON    = NAME  OF THE SHALLOW WATER CONSTITUENT
+C*     NJ     = NUMBER OF MAIN CONSTITUENTS FROM WHICH IT IS DERIVED.
+C*     COEF,KONCO = COMBINATION NUMBER AND NAME OF THESE MAIN
+C*                  CONSTITUENTS.
+C*  THE END OF THESE CONSTITUENTS IS DENOTED BY A BLANK CARD.
+C
+      JBASE=0
+      K1=NTIDAL+1
+      DO 160 K=K1,1000
+      J1=JBASE+1
+      J4=J1+3
+      READ(KR,130)KON(K),NJ(K),(COEF(J),KONCO(J),J=J1,J4)
+  130 FORMAT(6X,A5,I1,2X,4(F5.2,A5,5X))
+      IF(KON(K).eq.KBLANK) go to 170
+160   JBASE=JBASE+NJ(K)
+170   NTOTAL=K-1
+      RETURN
+C
+C***********************************************************************
+C*  NTIDAL IS THE NUMBER OF MAIN CONSTITUENTS
+C*  NTOTAL IS THE NUMBER OF CONSTITUENTS (MAIN + SHALLOW WATER)
+C*  FOR  THE GIVEN TIME KH, THE TABLE OF F AND V+U VALUES IS
+C*  CALCULATED FOR ALL THE CONSTITUENTS.
+C*     F IS THE NODAL MODULATION ADJUSTMENT FACTOR FOR AMPLITUDE
+C*     U IS THE NODAL MODULATION ADJUSTMENT FACTOR FOR PHASE
+C*     V IS THE ASTRONOMICAL ARGUMENT ADJUSTMENT FOR PHASE.
+C
+      ENTRY SETVUF(KH,KONX,VUX,FX,XLAT)
+      PI=3.1415926536
+      TWOPI=2.*PI
+      SLAT=SIN(PI*XLAT/180.)
+c      CALL GDAY(1,1,76,19,KD)
+c      YEARS=(KH/24.D0-KD)/365.00D0
+C
+C***********************************************************************
+C*  THE ASTRONOMICAL ARGUMENTS ARE CALCULATED BY LINEAR APPROXIMATION
+C*  AT THE MID POINT OF THE ANALYSIS PERIOD.
+C
+c      S=S0+YEARS*DS
+c      H=H0+YEARS*DH
+c      P=P0+YEARS*DP
+c      ENP=ENP0+YEARS*DNP
+c      PP=PP0+YEARS*DPP
+c	day number measured from January 0.5 1900 (i.e.,
+c	1200 UT December 31, 1899
+	d1=kh/24.d0
+	call gday(31,12,99,18,kd0)
+	d1=d1-dfloat(kd0)-0.5d0
+	call astr(d1,h,pp,s,p,enp,dh,dpp,ds,dp,dnp)
+c	write(6,*) d1,h,pp,s,p,enp,dh,dpp,ds,dp,dnp
+      INT24=24
+      INTDYS=KH/INT24
+      HH=dfloat(KH-INTDYS*INT24)
+      TAU=HH/24.D0+H-S
+	dtau=365.d0+dh-ds
+C
+C***********************************************************************
+C*  ONLY THE FRACTIONAL PART OF A SOLAR DAY NEED BE RETAINED FOR COMPU-
+C*  TING THE LUNAR TIME TAU.
+C
+      JBASE=0
+      DO 210 K=1,NTIDAL
+	do 209 l=1,mtot
+	if(kon(k).eq.kontab(l)) then
+      FREQ(l)=(II(K)*DTAU+JJ(K)*DS+KK(K)*DH+LL(K)*DP+MM(K)*DNP+
+     1NN(K)*DPP)/(365.*24.)
+	indx(k)=l
+	end if
+209	continue
+      VDBL=II(K)*TAU+JJ(K)*S+KK(K)*H+LL(K)*P+MM(K)*ENP+NN(K)*PP+SEMI(K)
+c	write(6,*) k,kon(k),vdbl
+      IV=VDBL
+      IV=(IV/2)*2
+      V=VDBL-IV
+      J1=JBASE+1
+      JL=JBASE+NJ(K)
+      SUMC=1.
+      SUMS=0.
+      DO 200 J=J1,JL
+C
+C***********************************************************************
+C*  HERE THE SATELLITE AMPLITUDE RATIO ADJUSTMENT FOR LATITUDE IS MADE
+C
+      RR=EE(J)
+      L=IR(J)+1
+      GO TO (901,902,903),L
+  902 RR=EE(J)*0.36309*(1.-5.*SLAT*SLAT)/SLAT
+      GO TO 901
+  903 RR=EE(J)*2.59808*SLAT
+  901 CONTINUE
+      UUDBL=LDEL(J)*P+MDEL(J)*ENP+NDEL(J)*PP+PH(J)
+      IUU=UUDBL
+      UU=UUDBL-IUU
+      SUMC=SUMC+RR*COS(UU*TWOPI)
+      SUMS=SUMS+RR*SIN(UU*TWOPI)
+  200 CONTINUE
+c	write(6,*) sumc,sums
+      F(K)=SQRT(SUMC*SUMC+SUMS*SUMS)
+      VU(K)=V+ATAN2(SUMS,SUMC)/TWOPI
+	v=v-int(v)
+	if(v.lt.0.) v=v+1.
+	vu(k)=vu(k)-int(vu(k))
+	if(vu(k).lt.0.) vu(k)=vu(k)+1.	
+	write(6,1998) kon(k),f(k),v*360.+360.*(vu(k)-v)
+1998	format(' ',a5,5x,2f12.5)
+cepm	write(6,998) kon(k),v*360.,f(k),360.*(vu(k)-v)
+998	format(' ',a5,5x,3f12.5)
+210   JBASE=JL
+C
+C***********************************************************************
+C*  HERE F AND V+U OF THE SHALLOW WATER CONSTITUENTS ARE COMPUTED FROM
+C*  THE VALUES OF THE MAIN CONSTITUENT FROM WHICH THEY ARE DERIVED.
+C
+      JBASE=0
+      K1=NTIDAL+1
+      IF(K1.GT.NTOTAL) RETURN
+      DO 270 K=K1,NTOTAL
+      F(K)=1.0
+      VU(K)=0.0
+	v=0.0
+	iflag=0
+	do 269 lk=1,mtot
+	if(kon(k).eq.kontab(lk)) then
+      FREQ(lk)=0.
+	iflag=1
+	go to 268
+	end if
+269	continue
+268   J1=JBASE+1
+      JL=JBASE+NJ(K)
+      DO 260 J=J1,JL
+      KM1=K-1
+      DO 240 L=1,KM1
+      IF(KON(L).eq.KONCO(J)) go to 250
+240   CONTINUE
+      WRITE(LP,241)KONCO(J)
+  241 FORMAT('   SETVUF STOP.',A5)
+      STOP
+250   F(K)=F(K)*F(L)**ABS(COEF(J))
+      VU(K)=VU(K)+COEF(J)*VU(L)
+      if(iflag.eq.1) FREQ(lk)=FREQ(lk)+COEF(J)*FREQ(indx(L))
+260	continue
+	write(6,999) k,kon(k),f(k),vu(k)*360.
+cepm	write(6,999) k,kon(k),vu(k)*360.,f(k)
+999	format(' ',i6,1x,a5,5x,2f12.5)
+270   JBASE=JL
+      RETURN
+      END
+	subroutine astr(d1,h,pp,s,p,np,dh,dpp,ds,dp,dnp)
+c	this subroutine calculates the following five ephermides
+c	of the sun and moon
+c	h = mean longitude of the sum
+c	pp = mean longitude of the solar perigee
+c	s = mean longitude of the moon
+c	p = mean longitude of the lunar perigee
+c	np = negative of the longitude of the mean ascending node
+c	and their rates of change.
+c	Units for the ephermides are cycles and for their derivatives
+c	are cycles/365 days
+c	The formulae for calculating this ephermides were taken from
+c	pages 98 and 107 of the Explanatory Supplement to the
+c	Astronomical Ephermeris and the American Ephermis and
+c	Nautical Almanac (1961)
+c
+	implicit real*8(a-h,o-z)
+	real*8 np
+	d2=d1*1.d-4
+	f=360.d0
+	f2=f/365.d0
+	h=279.696678d0+.9856473354d0*d1+.00002267d0*d2*d2
+	pp=281.220833d0+.0000470684d0*d1+.0000339d0*d2*d2+
+     1  .00000007d0*d2**3
+	s=270.434164d0+13.1763965268d0*d1-.000085d0*d2*d2+
+     1  .000000039d0*d2**3
+	p=334.329556d0+.1114040803d0*d1-.0007739d0*d2*d2-
+     1  .00000026d0*d2**3
+	np=-259.183275d0+.0529539222d0*d1-.0001557d0*d2*d2-
+     1  .00000005d0*d2**3
+	h=h/f
+	pp=pp/f
+	s=s/f
+	p=p/f
+	np=np/f
+	h=h-dint(h)
+	pp=pp-dint(pp)
+	s=s-dint(s)
+	p=p-dint(p)
+	np=np-dint(np)
+	dh=.9856473354d0+2.d-8*.00002267d0*d1
+	dpp=.0000470684d0+2.d-8*.0000339d0*d1
+     1  +3.d-12*.00000007d0*d1**2
+	ds=13.1763965268d0-2.d-8*.000085d0*d1+
+     1  3.d-12*.000000039d0*d1**2
+	dp=.1114040803d0-2.d-8*.0007739d0*d1-
+     1  3.d-12*.00000026d0*d1**2
+	dnp=+.0529539222d0-2.d-8*.0001557d0*d1-
+     1  3.d-12*.00000005d0*d1**2
+	dh=dh/f2
+	dpp=dpp/f2
+	ds=ds/f2
+	dp=dp/f2
+	dnp=dnp/f2
+	return
+	end
+      SUBROUTINE GDAY(IDD,IMM,IYY,ICC,KD)
+C!
+C!  GIVEN DAY,MONTH,YEAR AND CENTURY(EACH 2 DIGITS), GDAY RETURNS
+C!  THE DAY#, KD BASED ON THE GREGORIAN CALENDAR.
+C!  THE GREGORIAN CALENDAR, CURRENTLY 'UNIVERSALLY' IN USE WAS
+C!  INITIATED IN EUROPE IN THE SIXTEENTH CENTURY. NOTE THAT GDAY
+C!  IS VALID ONLY FOR GREGORIAN CALENDAR DATES.
+C
+C   KD=1 CORRESPONDS TO JANUARY 1, 0000
+C	
+c 	Note that the Gregorian reform of the Julian calendar 
+c	omitted 10 days in 1582 in order to restore the date
+c	of the vernal equinox to March 21 (the day after
+c	Oct 4, 1582 became Oct 15, 1582), and revised the leap 
+c	year rule so that centurial years not divisible by 400
+c	were not leap years.
+c
+C   THIS ROUTINE WAS WRITTEN BY EUGENE NEUFELD, AT IOS, IN JUNE 1990.
+C
+      INTEGER NDP(13)
+      INTEGER NDM(12)
+      DATA NDP/0,31,59,90,120,151,181,212,243,273,304,334,365/
+      DATA NDM/31,28,31,30,31,30,31,31,30,31,30,31/
+C!
+      LP = 6
+C!  TEST FOR INVALID INPUT:
+      IF(ICC.LT.0)THEN
+	 WRITE(LP,5000)ICC
+	 STOP
+      ENDIF
+      IF(IYY.LT.0.OR.IYY.GT.99)THEN
+	 WRITE(LP,5010)IYY
+	 STOP
+      ENDIF
+      IF(IMM.LE.0.OR.IMM.GT.12)THEN
+	 WRITE(LP,5020)IMM
+	 STOP
+      ENDIF
+      IF(IDD.LE.0)THEN
+	 WRITE(LP,5030)IDD
+	 STOP
+      ENDIF
+      IF(IMM.NE.2.AND.IDD.GT.NDM(IMM))THEN
+	 WRITE(LP,5030)IDD
+	 STOP
+      ENDIF
+      IF(IMM.EQ.2.AND.IDD.GT.29)THEN
+	 WRITE(LP,5030)IDD
+	 STOP
+      ENDIF
+      IF(IMM.EQ.2.AND.IDD.GT.28.AND.((IYY/4)*4-IYY.NE.0.OR.(IYY.EQ.0.AND
+     .    .(ICC/4)*4-ICC.NE.0)))THEN
+	 WRITE(LP,5030)IDD
+	 STOP
+      ENDIF
+5000  FORMAT(' INPUT ERROR. ICC = ',I7)
+5010  FORMAT(' INPUT ERROR. IYY = ',I7)
+5020  FORMAT(' INPUT ERROR. IMM = ',I7)
+5030  FORMAT(' INPUT ERROR. IDD = ',I7)
+C!
+C!  CALCULATE DAY# OF LAST DAY OF LAST CENTURY:
+      KD = ICC*36524 + (ICC+3)/4
+C!
+C!  CALCULATE DAY# OF LAST DAY OF LAST YEAR:
+      KD = KD + IYY*365 + (IYY+3)/4
+C!
+C!  ADJUST FOR CENTURY RULE:
+C!  (VIZ. NO LEAP-YEARS ON CENTURYS EXCEPT WHEN THE 2-DIGIT
+C!  CENTURY IS DIVISIBLE BY 4.)
+      IF(IYY.GT.0.AND.(ICC-(ICC/4)*4).NE.0) KD=KD-1
+C!  KD NOW TRULY REPRESENTS THE DAY# OF THE LAST DAY OF LAST YEAR.
+C!
+C!  CALCULATE DAY# OF LAST DAY OF LAST MONTH:
+      KD = KD + NDP(IMM)
+C!
+C!  ADJUST FOR LEAP YEARS:
+      IF(IMM.GT.2.AND.((IYY/4)*4-IYY).EQ.0.AND.((IYY.NE.0).OR.
+     .   (((ICC/4)*4-ICC).EQ.0)))   KD=KD+1
+C!  KD NOW TRULY REPRESENTS THE DAY# OF THE LAST DAY OF THE LAST
+C!  MONTH.
+C!
+C!  CALCULATE THE CURRENT DAY#:
+      KD = KD + IDD
+      RETURN
+C!
+C!
+      ENTRY DMY(IDD,IMM,IYY,ICC,KD)
+C!
+C!  GIVEN THE (GREGORIAN) DAY#, KD, AS CALCULATED ABOVE IN THIS ROUTINE,
+C!  ENTRY DMY RETURNS THE (GREGORIAN) DAY, MONTH, YEAR AND CENTURY.
+C!
+C!  TEST FOR VALID INPUT:
+      IF(KD.LE.0) WRITE(LP,5040)KD
+5040  FORMAT(' KD = ',I7,'  INVALID INPUT. DMY STOP.')
+C!
+C!  SAVE KD
+      KKD=KD
+C!  CALCULATE ICC AND SUBTRACT THE NUMBER OF DAYS REPRESENTED BY ICC
+C!  FROM KKD
+C!  JFH IS THE NUMBER OF 400 YEAR INTERVALS UP TO KKD
+C!  JCC IS THE NUMBER OF ADDITIONAL CENTURIES UP TO KKD
+      JFH = KKD/146097
+      KKD = KKD - JFH*146097
+      IF(KKD.LT.36525)THEN
+	 JCC = 0
+      ELSE
+	 KKD = KKD - 36525
+	 JCC = 1 + KKD/36524
+	 KKD = KKD - (JCC-1)*36524
+      END IF
+      ICC = 4*JFH + JCC
+      IF(KKD.EQ.0)THEN
+	 ICC = ICC-1
+	 IYY = 99
+	 IMM = 12
+	 IDD = 31
+	 RETURN
+      ENDIF
+C!
+C!  CALCULATE IYY. JFY IS THE NUMBER OF FOUR YEAR INTERVALS IN THE
+C!  CURRENT CENTURY. THE FIRST FOUR YEAR INTERVAL IS SHORT (1460 DAYS
+C!  RATHER THAN 1461)IF THE CURRENT CENTURY IS NOT DIVISIBLE BY 4, AND
+C!  IN THIS CASE JCC.NE.0 AS CALCULATED ABOVE.
+C!
+C!  CALCULATE JFY:
+      JFY = 0
+      IF(JCC.EQ.0)GOTO 10
+      IF(KKD.LT.1460)GOTO 10
+      JFY = 1
+      KKD = KKD - 1460
+10    KK = KKD/1461
+      JFY = JFY + KK
+      KKD = KKD - KK*1461
+C!
+C!  CALCULATE JYY, THE REMAINING YEARS OF THE CURRENT CENTURY UP TO THE
+C!  CURRENT DAY:
+      JYY = 0
+C!  THE NEXT YEAR IS NOT A LEAP YEAR IF JFY=0 AND JCC.NE.0.
+      IF(JFY.EQ.0.AND.JCC.NE.0)GOTO 20
+      IF(KKD.LT.366)GOTO 30
+      JYY = 1
+      KKD = KKD - 366
+20    JYYY = KKD/365
+      JYY = JYY + JYYY
+      KKD = KKD - JYYY*365
+30    IYY = 4*JFY + JYY
+      IF(KKD.EQ.0) THEN
+	 IYY=IYY-1
+	 IMM=12
+	 IDD=31
+	 RETURN
+      END IF
+C!
+C!  SET L=1 IF WE HAVE A LEAP YEAR.
+      L=0
+      IF(IYY-(IYY/4)*4.NE.0)GOTO 40
+      IF(IYY.EQ.0.AND.(ICC-(ICC/4)*4).NE.0)GOTO 40
+      L=1
+C!
+C!  CALCULATE IMM AND IDD
+40    IF(KKD.GT.31) GOTO 50
+      IMM=1
+      IDD=KKD
+      RETURN
+C!
+50    IF(KKD.GT.59)GOTO 60
+      IMM = 2
+      IDD = KKD-31
+      RETURN
+C!
+60    IF(KKD.GT.60)GOTO 70
+      IF(L.EQ.0)GOTO 70
+      IMM = 2
+      IDD = 29
+      RETURN
+C!
+70    IF(L.EQ.1) KKD=KKD-1
+      DO 80 I=4,13
+	 IF(KKD.GT.NDP(I))GOTO 80
+	 IMM = I-1
+	 IDD = KKD - NDP(I-1)
+	 RETURN
+C!
+80    CONTINUE
+90    WRITE(LP,5050)
+5050  FORMAT(' ERROR IN DMY.')
+      STOP
+      END
+

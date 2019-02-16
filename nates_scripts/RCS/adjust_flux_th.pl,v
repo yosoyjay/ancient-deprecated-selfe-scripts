@@ -1,0 +1,54 @@
+head	1.1;
+access;
+symbols;
+locks; strict;
+comment	@# @;
+
+
+1.1
+date	2008.10.20.16.54.05;	author hyde;	state Exp;
+branches;
+next	;
+
+
+desc
+@@
+
+
+1.1
+log
+@Initial revision
+@
+text
+@#!/usr/bin/perl
+
+use strict;
+
+if (@@ARGV != 5) {
+    die "usage: $0 <infile> <outfile> <base column> <adjusted column> <factor>\n";
+}
+
+open(INFILE, "$ARGV[0]");
+my @@input = <INFILE>;
+close(INFILE);
+open(OUTFILE, ">$ARGV[1]");
+
+my $base_col = $ARGV[2];
+my $adj_col = $ARGV[3];
+my $factor = $ARGV[4];
+my @@vals;
+
+my ($i, $j);
+
+for ($i=0; $i<=$#input; ++$i) { 
+    @@vals = split(/\s+/, $input[$i]);
+    print OUTFILE "$vals[0]\t";
+    $vals[$adj_col] = $vals[$base_col]*$factor;
+    for ($j=1; $j<=$#vals; ++$j) {
+	print OUTFILE "$vals[$j]\t";
+    }
+    print OUTFILE "\n";
+	
+}
+close(OUTFILE);
+@

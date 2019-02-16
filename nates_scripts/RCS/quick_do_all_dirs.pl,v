@@ -1,0 +1,78 @@
+head	1.1;
+access;
+symbols;
+locks; strict;
+comment	@# @;
+
+
+1.1
+date	2008.10.20.16.54.05;	author hyde;	state Exp;
+branches;
+next	;
+
+
+desc
+@@
+
+
+1.1
+log
+@Initial revision
+@
+text
+@#!/usr/bin/perl
+
+use strict;
+use CORIE;
+
+my $debug=0;
+
+if ($#ARGV!=7) {
+    print "$0 <in_dir> <out_dir> <year> <julian start day> <julian end day> <arg1> <arg2> <arg3>\n";
+    exit 0;
+}
+
+my @@command;
+my $source_dir = $ARGV[0];
+my $target_dir = $ARGV[1];
+my $year = $ARGV[2];
+my $sday = $ARGV[3];
+my $eday = $ARGV[4];
+my $arg1 = $ARGV[5];
+my $arg2 = $ARGV[6];
+my $arg3 = $ARGV[7];
+
+# quick tasks to every directory.  Change tasks as needed
+
+my @@dirs;
+my @@input;
+
+my $i;
+my $j;
+my @@vars;
+for ($i=$sday; $i<=$eday; ++$i) {
+    $dirs[$#dirs+1]=sprintf("%d-%03d", $year, $i);
+    print "$dirs[$#dirs]\n";
+}
+
+#@@dirs = ("yaqts15_5k2", "yaqts15_5k2_flow", "yaqts15_best", "yaqts15_flow", "yaqts15_uw1", "yaqts30", "yaqts30_5k2", "yaqts30_best", "yaqts30_best_diff1", "yaqts30_best_diff2", "yaqts30_best_diff3", "yaqts30_flow", "yaqts30_uw1", "yaqts45", "yaqts45_5k2", "yaqts60", "yaqts60_5k2", "yaqts60_best", "yaqts60_best_diff1", "yaqts60_best_diff2", "yaqts60_flow", "yaqts75", "yaqts75_5k2", "yaqts90", "yaqts90_5k2");
+
+for ($i=0; $i<=$#dirs; ++$i) {
+    runcommand("cp","$source_dir/hgrid.gr3 $source_dir/interpol.gr3 $target_dir/$dirs[$i]/run/" , 0);
+
+    #delete old data files:
+#    runcommand("rm", " $target_dir/$dirs[$i]/run/1_*  $target_dir/$dirs[$i]/run/2_* $target_dir/$dirs[$i]/run/3_* $target_dir/$dirs[$i]/run/*hotstart*", 0);
+#    runcommand("cp", "$target_dir/$dirs[0]/run/diff*.gr3 $target_dir/$dirs[$i]/run/", 0);
+    
+#    runcommand("cp", "$source_dir/amd_zelfe1_5k2 $target_dir/$dirs[$i]/run/", 1);
+
+#    runcommand("perl", "scripts/change_flux_dt.pl $source_dir/$dirs[$i]/run/flux.th $target_dir/$dirs[$i]/run/flux.th $arg1 $arg2", 0); 
+#    runcommand("perl", "scripts/change_flux_dt.pl $source_dir/$dirs[$i]/run/temp.th $target_dir/$dirs[$i]/run/temp.th $arg1 $arg2", 0); 
+    # for yaqalsea: make sure yaquina flux (2nd flow column flux.th) is a ratio of alsea flux (1st flow col in flux.th)
+#    runcommand("perl", "scripts/adjust_flux_th.pl $target_dir/$dirs[$i]/run/flux.th $target_dir/$dirs[$i]/run/flux.th 1 2 0.543", 0);    
+#    runcommand("cp", "$target_dir/$dirs[0]/run/diffmax.gr3 $target_dir/$dirs[$i]/run/diffmax.gr3", 0);
+#    runcommand("mv", "$target_dir/$dirs[$i]/run/lq_s.gr3 $target_dir/$dirs[$i]/run/lqk.gr3", 0);
+}
+
+#runcommand("ln", "-s $source_dir$dirs[0]/run/hotstart.in $target_dir/$dirs[0]/run/hotstart.in", 0);
+@

@@ -1,0 +1,7 @@
+These files were copied from:
+svn/forecast/products/intrusionlength
+
+They are modified to calculate the salt instruction for non-standard products
+runs.
+
+The perl script drives the process and calls the c based binary.

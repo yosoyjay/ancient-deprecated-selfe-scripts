@@ -1,0 +1,321 @@
+head	1.1;
+access;
+symbols;
+locks; strict;
+comment	@# @;
+
+
+1.1
+date	2008.10.20.16.54.05;	author hyde;	state Exp;
+branches;
+next	;
+
+
+desc
+@@
+
+
+1.1
+log
+@Initial revision
+@
+text
+@#!/usr/bin/perl
+
+use strict;
+use CORIE;
+use POSIX qw(ceil floor);
+
+my $base_dir = "/home/workspace/ccalmr32/hyde/columbia/db16/processed/";
+
+my $debug=0;
+
+my %years;
+
+#@@{ $years{"1999"} } = (0, 50, 100, 150, 200, 250, 300, 365);
+#@@{ $years{"2000"} } = (0, 50, 100, 150, 200, 250, 300, 365);
+#@@{ $years{"2001"} } = (0, 50, 100, 150, 200, 250, 300, 365);
+#@@{ $years{"2002"} } = (0, 50, 100, 150, 200, 250, 300, 365);
+#@@{ $years{"2003"} } = (0, 50, 100, 150, 200, 250, 300, 365);
+#@@{ $years{"2004"} } = (0, 50, 100, 150, 200, 250, 300, 365);
+#@@{ $years{"2005"} } = (0, 50, 100, 150, 200, 250, 300, 364);
+@@{ $years{"2006"} } = (0, 50, 100, 150, 200, 250, 300, 364);
+
+my @@dat_files = (#"csection_area", 
+#                 "csection_avg_salt",
+#                 "csection_bott_den",
+#                 "csection_bott_salt",
+#                 "csection_bott_temp",
+#                 "csection_depth_avg_den",
+#                 "csection_depth_avg_temp",
+#                 "csection_flux",
+#                 "csection_froude",
+#                 "csection_Hansen_n_Rattray",
+#                 "csection_surf_den",
+#                 "csection_surf_salt",
+#                 "csection_surf_temp",
+                 "mean_river_flux",
+                 "point_bott_den",
+                 "point_bott_salt",
+                 "point_bott_temp",
+                 "point_depth_avg_channel_velocity",
+                 "point_depth_avg_den",
+                 "point_depth_avg_salt",
+                 "point_depth_avg_temp",
+                 "point_elevation",
+                 "point_froude",
+                 "points_tidal_amplitude",
+                 "point_surf_channel_velocity",
+                 "point_surf_den",
+                 "point_surf_salt",
+                 "point_surf_temp",
+#                 "pt1_abs_hvel",
+#                 "pt1_abs_salt",
+#                 "pt1_abs_temp",
+#                 "pt1_elev",
+#                 "pt1_hvel",
+#                 "pt1_salt",
+#                 "pt1_temp",
+#                 "pt2_abs_hvel",
+#                 "pt2_abs_salt",
+#                 "pt2_abs_temp",
+#                 "pt2_elev",
+#                 "pt2_hvel",
+#                 "pt2_salt",
+#                 "pt2_temp",
+#                 "pt3_abs_hvel",
+#                 "pt3_abs_salt",
+#                 "pt3_abs_temp",
+#                 "pt3_elev",
+#                 "pt3_hvel",
+#                 "pt3_salt",
+#                 "pt3_temp",
+#                 "pt4_abs_hvel",
+#                 "pt4_abs_salt",
+#                 "pt4_abs_temp",
+#                 "pt4_elev",
+#                 "pt4_hvel",
+#                 "pt4_salt",
+#                 "pt4_temp",
+#                 "pt5_abs_hvel",
+#                 "pt5_abs_salt",
+#                 "pt5_abs_temp",
+#                 "pt5_elev",
+#                 "pt5_hvel",
+#                 "pt5_salt",
+#                 "pt5_temp",
+#                 "pt6_abs_hvel",
+#                 "pt6_abs_salt",
+#                 "pt6_abs_temp",
+#                 "pt6_elev",
+#                 "pt6_hvel",
+#                 "pt6_salt",
+#                 "pt6_temp",
+#                 "pt7_abs_hvel",
+#                 "pt7_abs_salt",
+#                 "pt7_abs_temp",
+#                 "pt7_elev",
+#                 "pt7_hvel",
+#                 "pt7_salt",
+#                 "pt7_temp",
+#                 "pt8_abs_hvel",
+#                 "pt8_abs_salt",
+#                 "pt8_abs_temp",
+#                 "pt8_elev",
+#                 "pt8_hvel",
+#                 "pt8_salt",
+#                 "pt8_temp",
+#                 "avg_transect_transect_ac_davg_vel",
+#                 "avg_transect_transect_bottom_rho",
+#                 "avg_transect_transect_bottom_salt",
+#                 "avg_transect_transect_davg_rho",
+#                 "avg_transect_transect_davg_salt",
+#                 "transect_transect_froude",
+#                 "avg_transect_transect_mag_depth_avg_vel",
+##                 "transect_transect_output_xy",
+#                 "transect_transect_salt_intrusion",
+#                 "avg_transect_transect_surface_rho",
+#                 "avg_transect_transect_surface_salt",
+#                 "avg_transect_transect_surf_vel",
+#                 "volume_filling_time",
+#                 "volume_flow_ratio",
+#                 "volume_fraction_salt_water",
+#                 "volume_fresh_water_flushing_time",
+#                 "volume_integrated_salt",
+#                 "volume_mean",
+#                 "volume_tidal_exchange",
+#                 "volume_tidal_prism"
+);                            
+
+my @@csv_files = ();#"pt1_abs_hvel", 
+#                 "pt1_abs_salt", 
+#                 "pt1_abs_temp", 
+#                 "pt1_elev", 
+#                 "pt1_hvel", 
+#                 "pt1_salt", 
+#                 "pt1_temp", 
+#                 "pt2_abs_hvel", 
+#                 "pt2_abs_salt", 
+#                 "pt2_abs_temp", 
+#                 "pt2_elev", 
+#                 "pt2_hvel", 
+#                 "pt2_salt", 
+#                 "pt2_temp", 
+#                 "pt3_abs_hvel", 
+#                 "pt3_abs_salt", 
+#                 "pt3_abs_temp", 
+#                 "pt3_elev", 
+#                 "pt3_hvel", 
+#                 "pt3_salt", 
+#                 "pt3_temp", 
+#                 "pt4_abs_hvel", 
+#                 "pt4_abs_salt", 
+#                 "pt4_abs_temp", 
+#                 "pt4_elev", 
+#                 "pt4_hvel", 
+#                 "pt4_salt", 
+#                 "pt4_temp", 
+#                 "pt5_abs_hvel", 
+#                 "pt5_abs_salt", 
+#                 "pt5_abs_temp", 
+#                 "pt5_elev", 
+#                 "pt5_hvel", 
+#                 "pt5_salt", 
+#                 "pt5_temp", 
+#                 "pt6_abs_hvel", 
+#                 "pt6_abs_salt", 
+#                 "pt6_abs_temp", 
+#                 "pt6_elev", 
+#                 "pt6_hvel", 
+#                 "pt6_salt", 
+#                 "pt6_temp", 
+#                 "pt7_abs_hvel", 
+#                 "pt7_abs_salt", 
+#                 "pt7_abs_temp", 
+#                 "pt7_elev", 
+#                 "pt7_hvel", 
+#                 "pt7_salt", 
+#                 "pt7_temp", 
+#                 "pt8_abs_hvel", 
+#                 "pt8_abs_salt", 
+#                 "pt8_abs_temp", 
+#                 "pt8_elev", 
+#                 "pt8_hvel", 
+#                 "pt8_salt", 
+#                 "pt8_temp", 
+#                 "river_flow"); 
+		 
+
+
+my @@keys = keys (%years);
+
+my ($i,$j,$k);
+my $key;
+my $dat;
+
+my $yearmin = min(@@keys);
+my $yearmax = max(@@keys);
+my $daymin = min(@@{ $years{min(@@keys)} })+1;
+my $daymax = max(@@{ $years{max(@@keys)} });
+
+my $fname_tail = "_".$yearmin."_".$daymin."_".$yearmax."_".$daymax;
+
+foreach $dat (@@dat_files) {
+    my @@data=();
+    my $time_cols = 0; #bad choices earlier result in sometimes time is rows, sometimes it is columns.  If the file is relatively short, assume columns
+    $i=0;
+
+    print "$base_dir$dat$fname_tail".".dat\n";
+
+
+    open(OUT, ">$base_dir$dat$fname_tail".".dat") or die "could not open $base_dir$dat$fname_tail".".dat for writing\n";
+    print OUT "$dat\n";
+
+    foreach $key (@@keys) {
+	print "\t$key\n";
+
+	my @@days = @@{ $years{$key} };
+	for ($j=0; $j<$#days; ++$j) {
+	    print "\t\t$days[$j]-$days[$j+1]\n";
+	    my $fname = "$base_dir$dat"."_$key"."_".($days[$j]+1)."_".($days[$j+1]-$days[$j]).".dat";
+	    open(IN, $fname) or die "could not open $fname\n";
+	    my @@input = <IN>;
+	    if ($i==0) {
+		print OUT $input[1];
+		print OUT $input[2];
+		print OUT $input[3];
+		print OUT $input[4];
+		print OUT $input[5];
+		$i=1;
+	    }
+	    if ($#input < 15) { 
+		$time_cols=1;
+		for ($k=6; $k<=$#input; ++$k) {
+		    chomp($input[$k]);
+		    if ($j==0) {
+			$data[$k-6] = $input[$k];
+		    }
+		    else {
+			$data[$k-6] = $data[$k-6]."\t".$input[$k];
+		    }
+		}
+	    }
+	    else {
+	        for ($k=6; $k<=$#input; ++$k) {
+		    print OUT $input[$k];
+		}		
+	    }
+	    close(IN);
+	}	
+    }
+    if ($time_cols) {
+	for ($k=0; $k<=$#data; ++$k) {
+	    print OUT $data[$k]."\n";
+	}
+    }
+
+    close(OUT);
+}
+
+#special:
+#my @@temp = @@{ $years{$keys[0]} };
+#runcommand("cp", "$base_dir"."transect_transect_output_xy_$keys[0]_".($temp[0]+1)."_".($temp[1]-$temp[0]).".dat $base_dir.transect_transect_output_xy$fname_tail".".dat", 0);
+
+foreach $dat (@@csv_files) {
+    my @@data=();
+    my $time_cols = 0; #bad choices earlier result in sometimes time is rows, sometimes it is columns.  If the file is relatively short, assume columns
+
+    print "$dat\n";
+
+    open(OUT, ">$base_dir$dat$fname_tail".".csv") or die "could not open $base_dir$dat$fname_tail".".csv for writing\n";
+
+    foreach $key (@@keys) {
+	print "\t$key\n";
+
+	my @@days = @@{ $years{$key} };
+	for ($j=0; $j<$#days; ++$j) {
+	    print "\t\t$days[$j]-$days[$j+1]\n";
+	    my $fname = "$base_dir$dat"."_$key"."_".($days[$j]+1)."_".($days[$j+1]-$days[$j]).".csv";
+	    open(IN, $fname) or die "could not open $fname\n";
+	    my @@input = <IN>;
+	    for ($k=6; $k<=$#input; ++$k) {
+		chomp($input[$k]);
+		if ($j==0) {
+		    $data[$k-6] = $input[$k];
+		}
+		else {
+		    $data[$k-6] = $data[$k-6].", ".$input[$k];
+		}
+	    }
+
+	    close(IN);
+	}	
+    }
+    for ($k=0; $k<=$#data; ++$k) {
+	print OUT $data[$k]."\n";
+    }
+
+    close(OUT);
+}
+
+@

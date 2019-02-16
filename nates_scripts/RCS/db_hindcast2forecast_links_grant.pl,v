@@ -1,0 +1,116 @@
+head	1.1;
+access;
+symbols;
+locks; strict;
+comment	@# @;
+
+
+1.1
+date	2008.10.20.16.54.05;	author hyde;	state Exp;
+branches;
+next	;
+
+
+desc
+@@
+
+
+1.1
+log
+@Initial revision
+@
+text
+@#!/usr/bin/perl
+
+use strict;
+use CORIE;
+use POSIX qw(ceil floor);
+
+if ($#ARGV!=5) {
+    print "$0 <base dir> <target dir> <year> <julian start day> <julian end day> <source db>\n";
+    exit 1;
+}
+
+my $base_dir = $ARGV[0];
+my $target_dir = $ARGV[1];
+my $year = $ARGV[2];
+my $sday = $ARGV[3];
+my $eday = $ARGV[4];
+my $db = $ARGV[5];
+
+my ($i, $j, $k);
+
+my @@link_files = ("elev.61", "hvel.64", "temp.63", "salt.63", "zcor.63");
+
+for ($i=$sday; $i<=$eday; ++$i) {
+    my $dir=sprintf("%d-%03d", $year, $i);
+
+    my $w = floor(($i-1)/7)+1;
+    my $local_day = ($i-1) % 7 + 1;
+
+    my $db_dir = sprintf("%d-%02d-%s", $year, $w, $db);
+
+    if (!-e "$target_dir/$dir") {
+	mkdir("$target_dir/$dir");
+    }
+    if (!-e "$target_dir/$dir/run") {
+	mkdir("$target_dir/$dir/run");
+    }
+
+    my @@flux = get_daily_flux("$base_dir/$db_dir/run/flux.th", $local_day);
+    open(FLUX, ">$target_dir/$dir/run/flux.th") or die "could not open $target_dir/$dir/run/flux.th for writing\n";
+    for ($j=0; $j<=$#flux; ++$j) {
+	my @@temp = @@{ $flux[$j] };
+
+	print FLUX "$temp[0]\t".($temp[1]+$temp[2])."\n";
+
+##	for ($k=0; $k<=$#temp; ++$k) {
+##	    print FLUX "@@temp[$k]";
+##	    if ($k==$#temp) {
+##		print FLUX "\n";
+##	    }
+##	    else {
+##		print FLUX " ";
+##	    }
+##	}
+    }
+    close(FLUX);
+
+#    runcommand("ln", "-s $base_dir/$db_dir/run/hgrid.gr3 $target_dir/$dir/run/hgrid.gr3", 1);
+#    runcommand("ln", "-s $base_dir/$db_dir/run/hgrid.gr3 $target_dir/$dir/run/hgrid.gr3", 0);
+#
+#    for ($j=0; $j<=$#link_files; ++$j) {
+#	runcommand("ln", "-s $base_dir/$db_dir/run/$local_day"."_$link_files[$j] $target_dir/$dir/run/1_$link_files[$j]", 1);
+#	runcommand("ln", "-s $base_dir/$db_dir/run/$local_day"."_$link_files[$j] $target_dir/$dir/run/1_$link_files[$j]", 0);
+#    }
+}
+
+###############################################
+
+sub get_daily_flux() {
+    my $fname = $_[0];
+    my $day = $_[1];
+    
+    open(INPUT, "$fname") or die "could not open $fname for reading\n";
+    my @@input = <INPUT>;
+
+    my ($ii, $jj);
+    my @@vals;
+    my @@ret;
+
+    @@vals = split(/\s+/, $input[0]);
+    my $dt = $vals[0];
+    my $npts = 86400/$dt;
+    my $offset = ($day-1)*$npts;
+
+    for ($ii=0; $ii<$npts; ++$ii) {
+	@@vals = split(/\s+/, $input[$ii+$offset]);
+	$ret[$ii][0]=$dt*($ii+1);
+	for ($jj=1; $jj<=$#vals; ++$jj) {
+	    $ret[$ii][$jj] = $vals[$jj];
+	}
+    }
+
+    return @@ret;
+}
+@
